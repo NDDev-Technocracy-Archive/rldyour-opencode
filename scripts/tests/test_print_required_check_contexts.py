@@ -85,15 +85,15 @@ def test_json_mode_lists_known_workflow_contexts() -> None:
     payload = json.loads(proc.stdout)
     contexts = {ctx["context"] for ctx in payload["contexts"]}
     expected_pr_required = {
-        "Validate rldyour-opencode / validate (ubuntu-latest)",
-        "Validate rldyour-opencode / shell-strict-mode (ubuntu-latest)",
-        "Typecheck Plugins / typecheck (ubuntu-latest)",
-        "Lint / ruff (ubuntu-latest)",
-        "Instruction Docs Check / instruction-docs (ubuntu-latest)",
-        "Secret Scan / gitleaks",
-        "CodeQL / Analyze (ubuntu-latest / javascript-typescript) (ubuntu-latest, javascript-typescript)",
-        "CodeQL / Analyze (ubuntu-latest / python) (ubuntu-latest, python)",
-        "OpenCode Runtime / runtime (ubuntu-latest)",
+        "Validate rldyour-opencode / validate (ubuntu-26.04)",
+        "Validate rldyour-opencode / shell-strict-mode (ubuntu-26.04)",
+        "Typecheck Plugins / typecheck (ubuntu-26.04)",
+        "Lint / ruff (ubuntu-26.04)",
+        "Instruction Docs Check / instruction-docs (ubuntu-26.04)",
+        "Validate rldyour-opencode / workflows",
+        "security / codeql (actions)",
+        "security / codeql (python)",
+        "OpenCode Runtime / runtime (ubuntu-26.04)",
     }
     missing = expected_pr_required - contexts
     assert not missing, (
