@@ -4,7 +4,8 @@
 The repository policy is:
 
 - external actions are pinned to immutable 40-character commit SHAs;
-- each SHA pin carries an inline `# vX.Y.Z` comment naming the upstream tag;
+- each SHA pin carries an inline `# vX.Y.Z` comment naming the upstream tag
+  (a monorepo tag keeps its component prefix, e.g. `# nddev-cicd-v0.6.20`);
 - optional remote validation resolves that tag and checks it points at the SHA.
 
 The remote mode intentionally verifies the tag/comment pair instead of asking
@@ -21,7 +22,9 @@ from pathlib import Path
 
 USES_RE = re.compile(r"^\s*(?:-\s*)?uses:\s*(?P<target>\S+)(?:\s+#\s*(?P<tag>\S+))?\s*$")
 PINNED_RE = re.compile(r"^(?P<action>[^@\s]+)@(?P<sha>[0-9a-f]{40})$", re.IGNORECASE)
-SEMVER_TAG_RE = re.compile(r"^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
+SEMVER_TAG_RE = re.compile(
+    r"^(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*-)?v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$"
+)
 
 
 @dataclass(frozen=True)
