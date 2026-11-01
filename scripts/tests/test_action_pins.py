@@ -59,6 +59,25 @@ jobs:
     ]
 
 
+def test_collect_action_pins_accepts_monorepo_component_tag(tmp_path: Path) -> None:
+    path = _write_workflow(
+        tmp_path,
+        """
+jobs:
+  test:
+    steps:
+      - uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@c192c6adcf22088abf456635de614d42e8fa3f8d # nddev-cicd-v0.6.20
+""",
+    )
+
+    pins, errors = cap.collect_action_pins([path])
+
+    assert errors == 0
+    assert [(pin.repo, pin.tag) for pin in pins] == [
+        ("NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows", "nddev-cicd-v0.6.20"),
+    ]
+
+
 def test_collect_action_pins_rejects_tag_only_uses(tmp_path: Path) -> None:
     path = _write_workflow(
         tmp_path,
