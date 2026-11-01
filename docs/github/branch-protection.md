@@ -49,14 +49,14 @@ fix candidate, not a workflow bug.
 
 | Workflow file | Workflow name | Job | GitHub check context |
 |---|---|---|---|
-| `validate.yml` | `Validate rldyour-opencode` | `validate` (matrix `os: [ubuntu-latest]`) | `Validate rldyour-opencode / validate (ubuntu-latest)` |
-| `validate.yml` | `Validate rldyour-opencode` | `shell-strict-mode` | `Validate rldyour-opencode / shell-strict-mode (ubuntu-latest)` |
-| `typecheck-plugins.yml` | `Typecheck Plugins` | `typecheck` (matrix `os: [ubuntu-latest]`) | `Typecheck Plugins / typecheck (ubuntu-latest)` |
-| `lint.yml` | `Lint` | `ruff` (matrix `os: [ubuntu-latest]`) | `Lint / ruff (ubuntu-latest)` |
-| `instruction-docs-check.yml` | `Instruction Docs Check` | `instruction-docs` | `Instruction Docs Check / instruction-docs (ubuntu-latest)` |
-| `secret-scan.yml` | `Secret Scan` | `gitleaks` | `Secret Scan / gitleaks` |
-| `codeql.yml` | `CodeQL` | `analyze` (matrix `os: [ubuntu-latest]`, `language: [javascript-typescript, python]`) | `CodeQL / Analyze (ubuntu-latest / javascript-typescript) (ubuntu-latest, javascript-typescript)` and `CodeQL / Analyze (ubuntu-latest / python) (ubuntu-latest, python)` |
-| `opencode-runtime.yml` | `OpenCode Runtime` | `runtime` (matrix `os: [ubuntu-latest]`) | `OpenCode Runtime / runtime (ubuntu-latest)` |
+| `validate.yml` | `Validate rldyour-opencode` | `validate` (matrix `os: [ubuntu-26.04]`) | `Validate rldyour-opencode / validate (ubuntu-26.04)` |
+| `validate.yml` | `Validate rldyour-opencode` | `shell-strict-mode` | `Validate rldyour-opencode / shell-strict-mode (ubuntu-26.04)` |
+| `typecheck-plugins.yml` | `Typecheck Plugins` | `typecheck` (matrix `os: [ubuntu-26.04]`) | `Typecheck Plugins / typecheck (ubuntu-26.04)` |
+| `lint.yml` | `Lint` | `ruff` (matrix `os: [ubuntu-26.04]`) | `Lint / ruff (ubuntu-26.04)` |
+| `instruction-docs-check.yml` | `Instruction Docs Check` | `instruction-docs` | `Instruction Docs Check / instruction-docs (ubuntu-26.04)` |
+| `secret-scan.yml` | `Secret Scan` | `gitleaks` | `Validate rldyour-opencode / workflows` |
+| `codeql.yml` | `CodeQL` | `analyze` (matrix `os: [ubuntu-26.04]`, `language: [javascript-typescript, python]`) | `security / codeql (actions)` and `security / codeql (python)` |
+| `opencode-runtime.yml` | `OpenCode Runtime` | `runtime` (matrix `os: [ubuntu-26.04]`) | `OpenCode Runtime / runtime (ubuntu-26.04)` |
 
 ### Scheduled / manual / artifact only (NOT required PR contexts)
 
@@ -99,15 +99,15 @@ gh api repos/rldyourmnd/rldyour-opencode/branches/main/protection | jq
 # Apply minimum protection (single-developer profile, contains required checks):
 gh api -X PUT repos/rldyourmnd/rldyour-opencode/branches/main/protection \
   -F required_status_checks.strict=true \
-  -F required_status_checks.contexts[]='Validate rldyour-opencode / validate (ubuntu-latest)' \
-  -F required_status_checks.contexts[]='Validate rldyour-opencode / shell-strict-mode (ubuntu-latest)' \
-  -F required_status_checks.contexts[]='Typecheck Plugins / typecheck (ubuntu-latest)' \
-  -F required_status_checks.contexts[]='Lint / ruff (ubuntu-latest)' \
-  -F required_status_checks.contexts[]='Instruction Docs Check / instruction-docs (ubuntu-latest)' \
-  -F required_status_checks.contexts[]='Secret Scan / gitleaks' \
-  -F required_status_checks.contexts[]='CodeQL / Analyze (ubuntu-latest / javascript-typescript) (ubuntu-latest, javascript-typescript)' \
-  -F required_status_checks.contexts[]='CodeQL / Analyze (ubuntu-latest / python) (ubuntu-latest, python)' \
-  -F required_status_checks.contexts[]='OpenCode Runtime / runtime (ubuntu-latest)' \
+  -F required_status_checks.contexts[]='Validate rldyour-opencode / validate (ubuntu-26.04)' \
+  -F required_status_checks.contexts[]='Validate rldyour-opencode / shell-strict-mode (ubuntu-26.04)' \
+  -F required_status_checks.contexts[]='Typecheck Plugins / typecheck (ubuntu-26.04)' \
+  -F required_status_checks.contexts[]='Lint / ruff (ubuntu-26.04)' \
+  -F required_status_checks.contexts[]='Instruction Docs Check / instruction-docs (ubuntu-26.04)' \
+  -F required_status_checks.contexts[]='Validate rldyour-opencode / workflows' \
+  -F required_status_checks.contexts[]='security / codeql (actions)' \
+  -F required_status_checks.contexts[]='security / codeql (python)' \
+  -F required_status_checks.contexts[]='OpenCode Runtime / runtime (ubuntu-26.04)' \
   -F enforce_admins=false \
   -F required_pull_request_reviews.required_approving_review_count=1 \
   -F required_pull_request_reviews.dismiss_stale_reviews=true \

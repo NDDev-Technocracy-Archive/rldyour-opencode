@@ -2,6 +2,8 @@ name: Dependency Freshness
 
 on:
   # Weekly cron: Monday 06:00 UTC.
+  schedule:
+    - cron: "0 6 * * 1"
   # Manual dispatch for owner-initiated checks.
   workflow_dispatch: {}
 
@@ -17,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
