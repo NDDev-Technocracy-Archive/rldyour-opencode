@@ -1,56 +1,53 @@
 # GitHub Actions Workflows
 
-Fourteen workflows provide the public/free CI surface for the OpenCode adapter.
-The repository is public, so standard GitHub-hosted runners do not consume the
-owner's private-repository Actions minutes. Keep every workflow on standard
-runner labels and keep third-party actions pinned to full commit SHAs.
+Eleven workflows provide the public CI surface. Every workflow stays on
+standard GitHub-hosted runners and third-party actions stay pinned to full SHAs.
 
-## Shared Workflow Pin
+## Shared source caller
 
-Every `NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows` action caller is
-pinned to engine version `nddev-cicd-v0.6.20` at commit
-`c192c6adcf22088abf456635de614d42e8fa3f8d`. The repository test
-`scripts/tests/test_shared_workflow_pin.py` rejects a mixed SHA or version
-comment.
+The workflow-audit job in `validate.yml` declares the exact published
+`NDDev-Technocracy-OpenNetwork/nddev-ci` revision. Its source recipe runs
+`just audit-source`: offline workflow checks and the original PR-diff or
+complete-history secret scope. The same declared release supplies merge stops
+and the daily security report. The ordinary updater owns these pins.
 
-## Required PR Gates
+`scripts/tests/test_shared_workflow_pin.py` rejects mixed source SHAs or
+version comments and any retired provider. This checks source consistency;
+actual release identity and native execution require their own CI evidence.
+
+## Retained checks
 
 | Workflow | Purpose |
 | --- | --- |
-| `validate.yml` | Core OpenCode config, schema, MCP, index, doctor, and unit-test validation. |
-| `cross-platform.yml` | Lightweight metadata/path smoke on standard Ubuntu, Windows, and macOS public runners. |
-| `instruction-docs-check.yml` | Agent instruction-doc presence and drift checks. |
-| `lint.yml` | Ruff lint on Python maintenance scripts. |
-| `typecheck-plugins.yml` | Strict TypeScript typecheck for local OpenCode plugins. |
-| `opencode-runtime.yml` | Installed-runtime smoke for OpenCode-specific behavior. |
-| `actionlint.yml` | GitHub Actions syntax and expression lint. |
-| `codeql.yml` | CodeQL code scanning for Python and TypeScript. |
-| `secret-scan.yml` | Gitleaks history scan for accidental secrets. |
-| `dependency-review.yml` | Pull-request dependency diff review. |
+| `validate.yml` | Static config/schema/MCP/index and source-unit validation, shell contract, shared source audit and merge stops. |
+| `cross-platform.yml` | Ubuntu, Windows and macOS metadata/path smoke. |
+| `instruction-docs-check.yml` | Instruction-document presence and drift. |
+| `lint.yml` | Python maintenance-script lint. |
+| `typecheck-plugins.yml` | Strict plugin TypeScript checks. |
+| `opencode-runtime.yml` | Installed-runtime smoke, operator doctor report and live resolver tests; separately disabled. |
+| `security.yml` | Retained CodeQL, dependency review and Scorecard. |
+| `security-daily.yml` | Shared daily security report. |
+| `dependency-check.yml` | Dependency and MCP freshness. |
+| `sbom.yml` | Dependency SBOM evidence. |
+| `release.yml` | Numeric-tag/manual release validation and publication. |
 
-## Supply-Chain And Drift Gates
+The static validate jobs retain their blocking validators and source-level
+unit checks. Live resolver collection and the operator doctor report belong
+to the separate runtime lane. JavaScript/TypeScript, Python and Actions retain
+real CodeQL analysis. Application, SDK and lock selectors remain unchanged. Source checking
+does not launch the runtime, MCP providers, browsers, model calls or installers.
+The live/native checks remain independent requirements and are not qualified by
+a source-only result. Artifacts retain their declared bounded lifetime.
 
-| Workflow | Trigger | Purpose |
-| --- | --- | --- |
-| `scorecard.yml` | push, weekly, manual, branch-protection changes | OpenSSF Scorecard JSON artifact/check-mode supply-chain signal. |
-| `dependency-check.yml` | weekly/manual | Dependency pin and MCP capability freshness. |
-| `sbom.yml` | weekly/manual | CycloneDX SBOM evidence for OpenCode runtime dependencies. |
+## Cost policy
 
-## Release Gate
+- Public CI uses standard GitHub-hosted runners only; no self-hosted, larger,
+  runner-group, ARC, private-organization or paid-size labels.
+- Keep the lightweight Ubuntu/Windows/macOS smoke workflow. Runtime-heavy and
+  release jobs may remain Ubuntu-only when their tools require it.
+- Artifact retention is explicit and at most 30 days.
+- Path-filtered and scheduled jobs preserve the full declared coverage.
 
-| Workflow | Trigger | Purpose |
-| --- | --- | --- |
-| `release.yml` | numeric product tag or manual dispatch | Release validation, TypeScript typecheck, SBOM artifact, GitHub Release. |
-
-## Cost Policy
-
-- Public adapter CI must stay on standard GitHub-hosted runner labels only.
-- No self-hosted, larger, runner-group, ARC, private organization, or paid-size
-  runner labels.
-- The public/free baseline includes one lightweight cross-platform workflow on
-  standard Ubuntu, Windows, and macOS runners. Runtime-heavy and release jobs
-  may stay Ubuntu-only when the local script is OS-independent or the required
-  toolchain is Linux-only.
-- Workflow artifacts must set explicit retention and stay at or below 30 days.
-- Path-filtered and scheduled jobs keep signal focused while preserving full
-  public/free coverage.
+The shared source caller declares its actionlint, Zizmor and Betterleaks release
+archives in `.github/ci-tools.json`. Archive and executable size/hash checks
+prepare the hosted job without relying on an editor machine's installed tools.

@@ -2,14 +2,20 @@
   "branch": "main",
   "maintainer_access": "maintainer can administer; required checks still apply to pushes",
   "required_status_checks": [
-    "validate (ubuntu-latest)",
-    "shell-strict-mode (ubuntu-latest)",
-    "Analyze (ubuntu-latest / javascript-typescript) / CodeQL (javascript-typescript)",
-    "Analyze (ubuntu-latest / python) / CodeQL (python)",
-    "gitleaks / Gitleaks secret scan",
-    "cross-platform smoke (ubuntu-latest) / smoke (ubuntu-latest)",
-    "cross-platform smoke (windows-latest) / smoke (windows-latest)",
-    "cross-platform smoke (macos-latest) / smoke (macos-latest)"
+    "codeql (actions)",
+    "codeql (javascript-typescript)",
+    "codeql (python)",
+    "dependency-review",
+    "instruction-docs (ubuntu-26.04)",
+    "merge-stops / merge stops",
+    "ruff (ubuntu-26.04)",
+    "shell-strict-mode (ubuntu-26.04)",
+    "smoke (macos-26)",
+    "smoke (ubuntu-26.04)",
+    "smoke (windows-2025)",
+    "typecheck (ubuntu-26.04)",
+    "validate (ubuntu-26.04)",
+    "workflows / recipe"
   ],
   "strict_required_status_checks": true,
   "allow_force_pushes": false,
@@ -20,13 +26,13 @@
     "dismiss_stale_reviews": true,
     "require_code_owner_review": false
   },
-  "enforce_admins": false,
+  "enforce_admins": true,
   "notes": [
-    "This file documents the desired branch protection state for the public main branch.",
-    "Apply it through GitHub Settings -> Branches or through a ruleset matching this shape.",
-    "Required status checks are selected from workflows that run on every pull request to main.",
-    "Path-filtered jobs such as dependency-review, lint, and typecheck-plugins are intentionally not required here because GitHub branch protection waits for required checks even when a workflow is not triggered.",
-    "Linear history is OFF on purpose: the estate policy is merge commits only (squash and rebase are disabled), and required_linear_history forbids merge commits - the two cannot both hold.",
-    "Approvals are 0 and code-owner review is off because this is a single-maintainer repository: GitHub does not allow approving your own pull request, so any non-zero requirement is satisfiable only by an admin bypass on every merge."
-  ]
+    "Required names are observed check-run names, not labels inferred from workflow titles.",
+    "Every required native/static/unit/platform/security job runs on every pull request to main.",
+    "Scorecard is push/manual only; daily reporting is scheduled/manual. Operator workflows are separately disabled and are not required source-stage contexts.",
+    "Path-filtered jobs must remain excluded from unconditional requirements if introduced.",
+    "Merge commits only, no force/deletion, no bypass, zero approvals and no code-owner requirement."
+  ],
+  "required_status_check_app_id": 15368
 }

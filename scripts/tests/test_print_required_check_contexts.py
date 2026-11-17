@@ -1,114 +1,77 @@
-"""Tests for `scripts/print_required_check_contexts.sh`.
-
-Closes audit Architecture-review F-5: the extractor that feeds
-`docs/github/branch-protection.md` was the only script in `scripts/`
-without coverage. These tests pin the output contract — text mode
-header, JSON mode envelope shape, exit codes — and the PyYAML
-fallback path so the heredoc Python module cannot regress to a raw
-ImportError traceback.
-
-Every subprocess.run here arms an explicit timeout per audit P0-4.
-"""
+"""The required-context reader prints the observed policy, without name prediction."""
 from __future__ import annotations
 
 import json
 import subprocess
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = REPO_ROOT / "scripts" / "print_required_check_contexts.sh"
-WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
-
-DEFAULT_TIMEOUT = 30
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPT = ROOT / "scripts" / "print_required_check_contexts.sh"
+POLICY = ROOT / ".github" / "branch-protection" / "main.json"
 
 
-def _run(*extra_args: str) -> subprocess.CompletedProcess[str]:
+def run(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["bash", str(SCRIPT), *extra_args],
-        cwd=REPO_ROOT,
+        ["bash", str(SCRIPT), *args],
+        cwd=ROOT,
         capture_output=True,
         text=True,
         check=False,
-        timeout=DEFAULT_TIMEOUT,
+        timeout=30,
     )
 
 
-def test_script_exists_and_is_executable() -> None:
-    assert SCRIPT.exists(), "scripts/print_required_check_contexts.sh must exist"
-    import os
-
-    assert os.access(SCRIPT, os.X_OK), "scripts/print_required_check_contexts.sh must be executable"
-
-
-def test_text_mode_runs_clean() -> None:
-    """Default invocation prints the header + one line per (workflow,
-    job, matrix-cell) context."""
-    proc = _run()
-    assert proc.returncode == 0, f"stderr={proc.stderr[:500]}"
-    out = proc.stdout
-    assert "WORKFLOW" in out, "header row missing"
-    assert "JOB" in out and "CONTEXT" in out, "header columns missing"
-    # Validate workflow must always be in the table — workflows/validate.yml is
-    # the project gatekeeper and matrices on Linux + macOS.
-    assert "Validate rldyour-opencode" in out
+def test_text_mode_prints_the_policy() -> None:
+    result = run()
+    assert result.returncode == 0, result.stderr
+    assert "REQUIRED CHECK CONTEXT (APP)" in result.stdout
+    policy = json.loads(POLICY.read_text(encoding="utf-8"))
+    for context in policy["required_status_checks"]:
+        assert f"{context} ({policy['required_status_check_app_id']})" in result.stdout
 
 
-def test_json_mode_emits_valid_envelope() -> None:
-    proc = _run("--json")
-    assert proc.returncode == 0, f"stderr={proc.stderr[:500]}"
-    payload = json.loads(proc.stdout)
-    assert {"count", "contexts"}.issubset(payload.keys()), payload.keys()
-    assert isinstance(payload["count"], int)
-    assert isinstance(payload["contexts"], list)
-    assert payload["count"] == len(payload["contexts"])
-    # Every entry has the documented shape so consumers (branch-protection
-    # docs, future required-context syncing tooling) can rely on it.
-    for ctx in payload["contexts"]:
-        assert {
-            "workflow_file",
-            "workflow_name",
-            "job_key",
-            "job_display",
-            "context",
-            "triggers",
-            "matrix",
-        }.issubset(ctx.keys()), ctx
-        assert isinstance(ctx["triggers"], list)
-        assert ctx["matrix"] is None or isinstance(ctx["matrix"], dict)
-
-
-def test_json_mode_lists_known_workflow_contexts() -> None:
-    """Mirror of the docs/github/branch-protection.md required-context
-    table. If a workflow is added or removed, this test must be updated
-    in lockstep with the docs."""
-    proc = _run("--json")
-    payload = json.loads(proc.stdout)
-    contexts = {ctx["context"] for ctx in payload["contexts"]}
-    expected_pr_required = {
-        "Validate rldyour-opencode / validate (ubuntu-26.04)",
-        "Validate rldyour-opencode / shell-strict-mode (ubuntu-26.04)",
-        "Typecheck Plugins / typecheck (ubuntu-26.04)",
-        "Lint / ruff (ubuntu-26.04)",
-        "Instruction Docs Check / instruction-docs (ubuntu-26.04)",
-        "Validate rldyour-opencode / workflows",
-        "security / codeql (actions)",
-        "security / codeql (python)",
-        "OpenCode Runtime / runtime (ubuntu-26.04)",
+def test_json_mode_preserves_exact_names_and_producer() -> None:
+    result = run("--json")
+    assert result.returncode == 0, result.stderr
+    actual = json.loads(result.stdout)
+    policy = json.loads(POLICY.read_text(encoding="utf-8"))
+    assert actual == {
+        "count": len(policy["required_status_checks"]),
+        "contexts": [
+            {"context": name, "integration_id": policy["required_status_check_app_id"]}
+            for name in policy["required_status_checks"]
+        ],
     }
-    missing = expected_pr_required - contexts
-    assert not missing, (
-        f"docs/github/branch-protection.md PR-required contexts not found in workflow output: {missing}"
-    )
 
 
-def test_workflow_count_matches_disk() -> None:
-    """Total context count must be at least the number of workflow files
-    on disk (matrix expansions add more, never less)."""
-    proc = _run("--json")
-    payload = json.loads(proc.stdout)
-    on_disk = list(WORKFLOWS_DIR.glob("*.yml"))
-    # The script emits one row per (job × matrix-cell). It must produce
-    # at LEAST one row per workflow that has jobs.
-    assert payload["count"] >= len(on_disk), (
-        f"extractor produced {payload['count']} rows for {len(on_disk)} workflow files"
-    )
+def test_reader_does_not_invent_a_workflow_prefix(tmp_path: Path) -> None:
+    path = tmp_path / "policy.json"
+    path.write_text(json.dumps({
+        "required_status_checks": ["validate (custom-os)", "caller / nested job"],
+        "required_status_check_app_id": 123,
+    }), encoding="utf-8")
+    result = run("--json", "--policy", str(path))
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["contexts"] == [
+        {"context": "validate (custom-os)", "integration_id": 123},
+        {"context": "caller / nested job", "integration_id": 123},
+    ]
+
+
+def test_duplicate_required_context_is_refused(tmp_path: Path) -> None:
+    path = tmp_path / "policy.json"
+    path.write_text(json.dumps({
+        "required_status_checks": ["check", "check"],
+        "required_status_check_app_id": 15368,
+    }), encoding="utf-8")
+    result = run("--policy", str(path))
+    assert result.returncode == 2
+    assert "duplicate required context" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_missing_contract_is_an_operational_error(tmp_path: Path) -> None:
+    result = run("--policy", str(tmp_path / "missing.json"))
+    assert result.returncode == 2
+    assert "[ERR] invalid check contract" in result.stderr
+    assert "Traceback" not in result.stderr

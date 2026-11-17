@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled, edited]
   workflow_dispatch: {}
 
 # Least-privilege token (OSSF Scorecard "Token-Permissions" check).
@@ -20,6 +21,8 @@ concurrency:
 
 jobs:
   validate:
+    env:
+      RY_OPENCODE_VALIDATE_MODE: static
     strategy:
       # Heavy validation remains Ubuntu-only; cross-platform.yml provides
       # standard public Ubuntu/Windows/macOS smoke coverage.
@@ -85,13 +88,6 @@ jobs:
         # local-launch + remote-head probes live in dependency-check.yml.
         run: python3 scripts/smoke_mcp_capabilities.py --mode static --json
 
-      - name: Doctor (Python core, JSON envelope, --total-timeout 30)
-        # Audit P0-3: deterministic doctor with per-check + wall-clock
-        # timeouts. Soft-fail (continue-on-error) so a single doctor regression
-        # never blocks merge, but the JSON envelope is published for triage.
-        continue-on-error: true
-        run: python3 scripts/doctor_opencode.py --format json --total-timeout 30 | tee doctor.json
-
       - name: Run validator unit tests
         run: python3 -m pytest scripts/tests/ -v
 
@@ -137,28 +133,20 @@ jobs:
           PY
 
   workflows:
-    runs-on: ubuntu-26.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: NDDev-Technocracy-Standarts/std-0004-ci-cd-workflows/.github/actions/tools@c192c6adcf22088abf456635de614d42e8fa3f8d # nddev-cicd-v0.6.20
-        with:
-          capability: security
-      - name: Lint and audit workflows
-        run: |
-          actionlint
-          zizmor --offline --no-progress .github/workflows/validate.yml .github/workflows/cross-platform.yml .github/workflows/dependency-check.yml .github/workflows/instruction-docs-check.yml .github/workflows/lint.yml .github/workflows/opencode-runtime.yml .github/workflows/typecheck-plugins.yml .github/workflows/security.yml .github/dependabot.yml
-      - name: Scan new pull request commits, or the full history on main
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ -n "$BASE" ]; then
-            gitleaks git --no-banner --redact --log-opts="$BASE..$HEAD" .
-          else
-            gitleaks git --no-banner --redact .
-          fi
+    uses: NDDev-Technocracy-OpenNetwork/nddev-ci/.github/workflows/recipe.yml@a12acfc75fd7daee2fac9a246ee60683fe18955b # v0.6.67
+    permissions:
+      contents: read
+    with:
+      hosted-runner: ubuntu-26.04
+      recipe: audit-source
+      arguments: ${{ format('["{0}"]', github.event_name == 'pull_request' && format('{0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || '--all') }}
+      fetch-depth: 0
+      tool-assets: .github/ci-tools.json
+      timeout-minutes: 10
 
+  merge-stops:
+    uses: NDDev-Technocracy-OpenNetwork/nddev-ci/.github/workflows/merge-stops.yml@a12acfc75fd7daee2fac9a246ee60683fe18955b # v0.6.67
+    permissions:
+      contents: read
+    with:
+      hosted-runner: ubuntu-26.04

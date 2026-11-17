@@ -16,7 +16,7 @@ tuple.
 
 ## Source Of Truth
 
-- Repository: `rldyourmnd/rldyour-opencode`
+- Repository: `NDDev-Technocracy-Archive/rldyour-opencode`
 - Branch: `main`
 
 The durable source of truth is the current code/config/tests/git state, not a
@@ -184,7 +184,7 @@ here.
 Run these checks after changing OpenCode-owned source:
 
 ```bash
-bash scripts/validate_config.sh
+bash scripts/validate_config.sh --mode static
 python3 scripts/validate_contract.py
 python3 scripts/validate_opencode_baseline.py
 python3 scripts/validate_opencode_schema.py
@@ -195,16 +195,15 @@ python3 scripts/validate_mcp_profiles.py
 
 ## CI runner selection
 
-Every workflow run is evidence and must finish. Use a concurrency group unique
-to `github.run_id` and `cancel-in-progress: false`; never discard a queued or
-running check as superseded.
+Public source callers select standard GitHub-hosted runners explicitly. The
+workflow audit and security report use the full-SHA shared release declared in
+`.github/workflows/validate.yml`; its source checks do not replace the
+retained native validators, unit tests, runtime/plugin or cross-platform lanes.
+Keep the existing run-id concurrency and no-cancellation policy. Source pins
+receive ordinary updater changes as one coherent release.
 
-This repository is public, so `pull_request` executes untrusted fork code.
-Every caller of a `NDDev-OpenNetwork/ci-workflows` reusable that exposes a `runner`
-input passes `runner: ubuntu-latest` explicitly, and must keep it. Several of
-those reusables may default `runner` to the retired `amsterdam` label, and
-that default is a property of the **pinned commit**, not of this
-repository - so dropping the explicit value would let a routine pin bump route
-fork PRs onto trusted private infrastructure with no diff here to review. On
-any ci-workflows pin bump, diff `inputs.runner.default` between the old and
-new commit before merging.
+Live resolver coverage is in `scripts/runtime-tests/` and
+`opencode-runtime.yml`; the standalone doctor report belongs to that lane.
+Static validation runs `scripts/tests/`, whose doctor-core checks read source
+and use the static validators. It neither installs nor resolves the OpenCode
+CLI. Runtime qualification remains separate from static and unit evidence.

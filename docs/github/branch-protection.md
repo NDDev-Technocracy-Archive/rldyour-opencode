@@ -1,134 +1,46 @@
-# Branch Protection and Required Checks
+# Branch protection
 
-This document fixes the **operator-side governance contract** for the
-`rldyourmnd/rldyour-opencode` repository. The agent does not apply these
-rules - owners do, via the GitHub web UI or `gh api`. The contract is
-captured here so future audits and successor maintainers know what to
-restore if branch protection is ever reset.
+The current source contract is `.github/branch-protection/main.json`. Its
+required names and producer ID were read from completed GitHub check runs.
+Workflow titles do not determine check-run names, and a static workflow
+inventory is not evidence that a context exists or is required.
 
-## Protected branches
+The contract keeps every unconditional native/static/unit/platform/security
+check. It covers validation, source-level unit tests, shell rules, plugin
+typechecking, lint, instruction docs, three-platform metadata smoke,
+JavaScript/TypeScript, Python and Actions CodeQL, dependency review, shared
+source auditing and merge stops. All listed contexts use GitHub Actions.
 
-- `main` - product/runtime branch; only branch from which `release.yml`
-  fires. Durable AI context is tracked on `main` with the rest of the
-  source tree.
-
-## Public repository CI/CD
-
-`rldyourmnd/rldyour-opencode` is public, so existing CI/CD workflows are
-automatic by default. `references/public-repo-ci-policy.md` is loaded by
-OpenCode through `opencode.json.instructions`; it authorizes running existing
-workflow surfaces for public-repo verification while keeping workflow edits,
-branch protection changes, repository rulesets, environments, secrets, and
-variables owner-restricted.
-
-## Required status checks for `main`
-
-The contexts below match what GitHub emits at runtime. Audit P0-5 closed
-the previous docs/runtime drift by deriving the table from the same
-workflow files using `scripts/print_required_check_contexts.sh`. Re-run
-that script after any workflow edit and update this table verbatim - a
-required check context that does not match a real GitHub check name
-will block all merges (the protection rule waits for a context that
-never fires) or, worse, silently let a regression through (the
-required check name was a typo and never gated anything).
-
-### How to refresh this table
+Read the exact contract without reconstructing names:
 
 ```bash
-bash scripts/print_required_check_contexts.sh --json | jq -r '
-  .contexts[]
-  | [.workflow_name, .job_key, .context, (.triggers | join(","))]
-  | @tsv
-'
+bash scripts/print_required_check_contexts.sh
+bash scripts/print_required_check_contexts.sh --json
 ```
 
-Compare the output against the rows below. Any mismatch is a docs bug
-fix candidate, not a workflow bug.
+After changing a workflow, compare the actual exact-head GitHub check runs and
+producer IDs with this file. Update the contract from observed runs, then
+reconcile live protection. The reader validates names and prints the contract;
+it does not query GitHub, change settings or prove the live state.
 
-### Required on every pull request to `main`
+Main requires a pull request, strict checks and merge commits. Approvals and
+code-owner review are zero, linear history is off, force/deletion are disabled,
+and administrator bypass is absent. Repository auto-merge is available only
+behind the complete active requirements.
 
-| Workflow file | Workflow name | Job | GitHub check context |
-|---|---|---|---|
-| `validate.yml` | `Validate rldyour-opencode` | `validate` (matrix `os: [ubuntu-26.04]`) | `Validate rldyour-opencode / validate (ubuntu-26.04)` |
-| `validate.yml` | `Validate rldyour-opencode` | `shell-strict-mode` | `Validate rldyour-opencode / shell-strict-mode (ubuntu-26.04)` |
-| `typecheck-plugins.yml` | `Typecheck Plugins` | `typecheck` (matrix `os: [ubuntu-26.04]`) | `Typecheck Plugins / typecheck (ubuntu-26.04)` |
-| `lint.yml` | `Lint` | `ruff` (matrix `os: [ubuntu-26.04]`) | `Lint / ruff (ubuntu-26.04)` |
-| `instruction-docs-check.yml` | `Instruction Docs Check` | `instruction-docs` | `Instruction Docs Check / instruction-docs (ubuntu-26.04)` |
-| `secret-scan.yml` | `Secret Scan` | `gitleaks` | `Validate rldyour-opencode / workflows` |
-| `codeql.yml` | `CodeQL` | `analyze` (matrix `os: [ubuntu-26.04]`, `language: [javascript-typescript, python]`) | `security / codeql (actions)` and `security / codeql (python)` |
-| `opencode-runtime.yml` | `OpenCode Runtime` | `runtime` (matrix `os: [ubuntu-26.04]`) | `OpenCode Runtime / runtime (ubuntu-26.04)` |
+Scorecard and daily reporting remain outside unconditional pull-request
+requirements. Path-filtered jobs must be excluded if their filters can prevent
+a report. Dependency probes, the explicit runtime/doctor/live-resolver lane,
+release and SBOM operators are separately disabled during source-only
+maintenance; their unperformed runtime behavior is not source qualification.
 
-### Scheduled / manual / artifact only (NOT required PR contexts)
-
-These workflows do not run on PR by design, so listing them as required
-PR contexts would deadlock merges. They are tracked for visibility and
-restored separately if branch protection is reset.
-
-| Workflow file | Workflow name | Job | Trigger | Notes |
-|---|---|---|---|---|
-| `dependency-check.yml` | `Dependency Freshness` | `freshness` | schedule + workflow_dispatch | weekly pin + freshness probe + remote-head/local-launch MCP smoke; not gated on PR |
-| `dependency-review.yml` | `Dependency Review` | `dependency-review` | pull_request | runs on pull requests; pass/fail follows repository Dependency Graph availability and action outcome |
-| `sbom.yml` | `SBOM Snapshot` | `cyclonedx` | release + workflow_dispatch | optional artifact |
-| `release.yml` | `Release` | `verify` | tag push + workflow_dispatch | tag-triggered, not PR-required |
-
-## Additional protections
-
-- **Linear history**: required. Squash-and-merge or rebase-and-merge only;
-  no merge commits on `main`.
-- **Conversation resolution**: required before merge.
-- **Restrict pushes**: only repository administrators may push directly to
-  `main`; everyone else opens a PR.
-- **Allow force pushes**: disabled for `main`.
-- **Allow deletions**: disabled for `main`.
-- **Required pull request reviews**: 1 reviewer for single-developer
-  ownership (`@rldyourmnd`) with codeowner enforcement via `.github/CODEOWNERS`.
-- **Dismiss stale reviews when new commits are pushed**: enabled.
-- **Require review from codeowners**: enabled (CODEOWNERS maps every path
-  to `@rldyourmnd`).
-
-## Restoring protection
-
-The required-context list below mirrors the PR-required rows above and
-expands every matrix axis explicitly - GitHub branch protection
-requires the FULL context name including matrix params.
+Inspect live state with the current repository identity:
 
 ```bash
-# Read-only inspection:
-gh api repos/rldyourmnd/rldyour-opencode/branches/main/protection | jq
-
-# Apply minimum protection (single-developer profile, contains required checks):
-gh api -X PUT repos/rldyourmnd/rldyour-opencode/branches/main/protection \
-  -F required_status_checks.strict=true \
-  -F required_status_checks.contexts[]='Validate rldyour-opencode / validate (ubuntu-26.04)' \
-  -F required_status_checks.contexts[]='Validate rldyour-opencode / shell-strict-mode (ubuntu-26.04)' \
-  -F required_status_checks.contexts[]='Typecheck Plugins / typecheck (ubuntu-26.04)' \
-  -F required_status_checks.contexts[]='Lint / ruff (ubuntu-26.04)' \
-  -F required_status_checks.contexts[]='Instruction Docs Check / instruction-docs (ubuntu-26.04)' \
-  -F required_status_checks.contexts[]='Validate rldyour-opencode / workflows' \
-  -F required_status_checks.contexts[]='security / codeql (actions)' \
-  -F required_status_checks.contexts[]='security / codeql (python)' \
-  -F required_status_checks.contexts[]='OpenCode Runtime / runtime (ubuntu-26.04)' \
-  -F enforce_admins=false \
-  -F required_pull_request_reviews.required_approving_review_count=1 \
-  -F required_pull_request_reviews.dismiss_stale_reviews=true \
-  -F required_pull_request_reviews.require_code_owner_reviews=true \
-  -F required_linear_history=true \
-  -F allow_force_pushes=false \
-  -F allow_deletions=false \
-  -F restrictions=null
+gh api repos/NDDev-Technocracy-Archive/rldyour-opencode/rules/branches/main
+gh api repos/NDDev-Technocracy-Archive/rldyour-opencode/rulesets
 ```
 
-The agent must NOT execute these branch-protection mutation commands
-unattended. Branch protection mutations require explicit user authorization in
-the same request (see AGENTS.md § CI/CD and Git Mutation Gate). This remains
-true even though public-repo CI workflow execution itself is automatic by
-policy.
-
-## Verification
-
-`scripts/print_required_check_contexts.sh` is the authoritative source.
-The table above is generated from the workflow files; rerun the script
-after every workflow change and update this document if any context
-name has drifted. CI does not yet fail on a docs/runtime mismatch (the
-docs are operator-facing, not gated), but the script makes the drift
-trivial to spot during review.
+An administrator restores the complete reviewed policy through repository
+rulesets or branch protection and verifies it independently by GET. The source
+file describes intent; the API response proves enforcement.
