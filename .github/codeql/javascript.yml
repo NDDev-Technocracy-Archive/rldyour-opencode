@@ -1,0 +1,4 @@
+name: JavaScript and TypeScript source
+paths:
+  - .
+  - .opencode

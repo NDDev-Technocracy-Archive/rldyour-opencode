@@ -9,7 +9,7 @@ default:
 check:
     just --fmt --check
     actionlint
-    zizmor --offline --no-progress .github/workflows/validate.yml .github/workflows/cross-platform.yml .github/workflows/dependency-check.yml .github/workflows/instruction-docs-check.yml .github/workflows/lint.yml .github/workflows/opencode-runtime.yml .github/workflows/typecheck-plugins.yml .github/workflows/security.yml .github/workflows/security-daily.yml .github/dependabot.yml
+    zizmor --offline --no-progress .github
 
 # Retain exact PR-diff or complete-history source secret scope.
 audit-source scope="--all": check
