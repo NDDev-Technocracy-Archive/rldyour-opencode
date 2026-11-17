@@ -1,0 +1,8 @@
+# Historical synthetic redaction fixtures, limited to exact commit/path/rule/line IDs.
+# No path or credential-value allowlist; new commits of the same inputs remain scanned.
+596b482bd6dee9ff4fc188efaf7a386b8c433ad8:scripts/tests/test_sanitize_diag.py:private-key:77
+6aa4eb84211268767202a4611533d4e54e2317ba:scripts/tests/test_command_audit_sanitizer.py:generic-api-key:74
+6aa4eb84211268767202a4611533d4e54e2317ba:scripts/tests/test_command_audit_sanitizer.py:generic-api-key:78
+96e4b1fdaf4a79418c3f33d2f6530e923d88f512:scripts/tests/test_sanitize_diag.py:private-key:77
+a4a8fadc5d4ffb140ab7d561be166aa2a1ef48dd:scripts/tests/test_command_audit_sanitizer.py:generic-api-key:74
+a4a8fadc5d4ffb140ab7d561be166aa2a1ef48dd:scripts/tests/test_command_audit_sanitizer.py:generic-api-key:78

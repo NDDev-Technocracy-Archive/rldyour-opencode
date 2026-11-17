@@ -227,6 +227,11 @@ MCP secrets (`GITHUB_PERSONAL_ACCESS_TOKEN`, `CONTEXT7_API_KEY`, etc.) are passe
 
 ## Validation
 
+`just check` validates workflow source offline. `just audit-source` also
+scans the complete secret history, or an explicit pull request commit range.
+Native validation and runtime checks keep their existing workflows; source
+commands launch no OpenCode, MCP, model, browser or installation process.
+
 ```bash
 bash scripts/validate_config.sh                            # JSON shape + skill/agent/command frontmatter + VERSION semver
 uvx --from "pytest==9.1.1" --with "pyyaml==6.0.3" --with "jsonschema==4.26.0" --with "referencing==0.37.0" pytest scripts/tests/
