@@ -45,3 +45,7 @@ a source-only result. Artifacts retain their declared bounded lifetime.
   release jobs may remain Ubuntu-only when their tools require it.
 - Artifact retention is explicit and at most 30 days.
 - Path-filtered and scheduled jobs preserve the full declared coverage.
+
+The shared source caller declares its actionlint, Zizmor and Betterleaks release
+archives in `.github/ci-tools.json`. Archive and executable size/hash checks
+prepare the hosted job without relying on an editor machine's installed tools.
