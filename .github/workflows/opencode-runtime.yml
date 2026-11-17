@@ -84,3 +84,13 @@ jobs:
         env:
           RY_REQUIRE_OPENCODE_CLI: "1"
         run: bash scripts/validate_config.sh
+
+      - name: Doctor (Python core, JSON envelope, --total-timeout 30)
+        # Audit P0-3: deterministic doctor with per-check + wall-clock
+        # timeouts. Soft-fail (continue-on-error) so a single doctor regression
+        # never blocks merge, but the JSON envelope is published for triage.
+        continue-on-error: true
+        run: python3 scripts/doctor_opencode.py --format json --total-timeout 30 | tee doctor.json
+
+      - name: Run live resolver tests in the explicit runtime lane
+        run: python3 -m pytest scripts/runtime-tests/ -v

@@ -201,3 +201,9 @@ workflow audit and security report use the full-SHA shared release declared in
 retained native validators, unit tests, runtime/plugin or cross-platform lanes.
 Keep the existing run-id concurrency and no-cancellation policy. Source pins
 receive ordinary updater changes as one coherent release.
+
+Live resolver coverage is in `scripts/runtime-tests/` and
+`opencode-runtime.yml`; the standalone doctor report belongs to that lane.
+Static validation runs `scripts/tests/`, whose doctor-core checks read source
+and use the static validators. It neither installs nor resolves the OpenCode
+CLI. Runtime qualification remains separate from static and unit evidence.
