@@ -184,7 +184,7 @@ here.
 Run these checks after changing OpenCode-owned source:
 
 ```bash
-bash scripts/validate_config.sh
+bash scripts/validate_config.sh --mode static
 python3 scripts/validate_contract.py
 python3 scripts/validate_opencode_baseline.py
 python3 scripts/validate_opencode_schema.py

@@ -233,7 +233,7 @@ Native validation and runtime checks keep their existing workflows; source
 commands launch no OpenCode, MCP, model, browser or installation process.
 
 ```bash
-bash scripts/validate_config.sh                            # JSON shape + skill/agent/command frontmatter + VERSION semver
+bash scripts/validate_config.sh --mode static              # JSON shape + skill/agent/command frontmatter + VERSION semver
 uvx --from "pytest==9.1.1" --with "pyyaml==6.0.3" --with "jsonschema==4.26.0" --with "referencing==0.37.0" pytest scripts/tests/
 bash scripts/check_deps_freshness.sh --check-freshness     # list pinned MCP dependencies + npm/PyPI freshness
 python3 scripts/check_action_pins.py .github/workflows --remote  # verify SHA-pinned GitHub Actions comments

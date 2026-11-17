@@ -19,20 +19,22 @@ actual release identity and native execution require their own CI evidence.
 
 | Workflow | Purpose |
 | --- | --- |
-| `validate.yml` | Core config/schema/MCP/index/doctor/unit validation, shell contract, shared source audit and merge stops. |
+| `validate.yml` | Static config/schema/MCP/index and source-unit validation, shell contract, shared source audit and merge stops. |
 | `cross-platform.yml` | Ubuntu, Windows and macOS metadata/path smoke. |
 | `instruction-docs-check.yml` | Instruction-document presence and drift. |
 | `lint.yml` | Python maintenance-script lint. |
 | `typecheck-plugins.yml` | Strict plugin TypeScript checks. |
-| `opencode-runtime.yml` | Installed-runtime smoke. |
+| `opencode-runtime.yml` | Installed-runtime smoke, operator doctor report and live resolver tests; separately disabled. |
 | `security.yml` | Retained CodeQL, dependency review and Scorecard. |
 | `security-daily.yml` | Shared daily security report. |
 | `dependency-check.yml` | Dependency and MCP freshness. |
 | `sbom.yml` | Dependency SBOM evidence. |
 | `release.yml` | Numeric-tag/manual release validation and publication. |
 
-The two original validate jobs and nine independent workflows retain their
-native commands, selectors, security policy and evidence scope. Source checking
+The static validate jobs retain their blocking validators and source-level
+unit checks. Live resolver collection and the operator doctor report belong
+to the separate runtime lane. JavaScript/TypeScript, Python and Actions retain
+real CodeQL analysis. Application, SDK and lock selectors remain unchanged. Source checking
 does not launch the runtime, MCP providers, browsers, model calls or installers.
 The live/native checks remain independent requirements and are not qualified by
 a source-only result. Artifacts retain their declared bounded lifetime.
